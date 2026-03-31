@@ -100,6 +100,34 @@ function Get-RegistryValueSafe {
     return [string]$property.Value
 }
 
+function Convert-FileListToPathArray {
+    param(
+        [AllowNull()]
+        [object]$Files
+    )
+
+    if ($null -eq $Files) {
+        return @()
+    }
+
+    $paths = [System.Collections.Generic.List[string]]::new()
+    foreach ($file in $Files) {
+        if ($null -eq $file) {
+            continue
+        }
+
+        $fullNameProperty = $file.PSObject.Properties['FullName']
+        if ($null -ne $fullNameProperty -and -not [string]::IsNullOrWhiteSpace([string]$fullNameProperty.Value)) {
+            $paths.Add([string]$fullNameProperty.Value)
+            continue
+        }
+
+        $paths.Add([string]$file)
+    }
+
+    return @($paths)
+}
+
 $isWindowsOs = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
 if (-not $isWindowsOs) {
     throw 'This remediation script can only run on Windows.'
@@ -307,10 +335,10 @@ $report = [pscustomobject]@{
     CandidateForRemovalFileCount = $candidateForRemoval.Count
     DeletedFileCount             = $deletedFiles.Count
     DeleteFailureCount           = $deleteFailures.Count
-    ReferencedFiles              = $referencedFiles.FullName
-    OrphanedFiles                = $orphanedFiles.FullName
-    ExcludedOrphanedFiles        = $excludedOrphaned.FullName
-    CandidateForRemovalFiles     = $candidateForRemoval.FullName
+    ReferencedFiles              = Convert-FileListToPathArray -Files $referencedFiles
+    OrphanedFiles                = Convert-FileListToPathArray -Files $orphanedFiles
+    ExcludedOrphanedFiles        = Convert-FileListToPathArray -Files $excludedOrphaned
+    CandidateForRemovalFiles     = Convert-FileListToPathArray -Files $candidateForRemoval
     DeletedFiles                 = @($deletedFiles)
     DeleteFailureDetails         = @($deleteFailures)
     FileClassification           = @($classification)
