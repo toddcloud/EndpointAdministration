@@ -1,0 +1,14 @@
+[
+  {
+    "Name": "Adobe Acrobat Custom",
+    "ProductName": ["Adobe Acrobat*"],
+    "PatchCode": ["{AC7*"],
+    "PathPattern": ["*\\AcroRd*", "*\\Acrobat*"]
+  },
+  {
+    "Name": "Custom Line-of-Business App",
+    "ProductName": ["MyCompanyApp*"],
+    "ProductCode": ["{12345678-1234-1234-1234-123456789ABC}"],
+    "PathPattern": ["*\\MyCompanyApp*"]
+  }
+]
