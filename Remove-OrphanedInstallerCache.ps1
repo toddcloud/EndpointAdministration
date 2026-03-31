@@ -75,6 +75,31 @@ function Test-IsExcluded {
     return $false
 }
 
+function Get-RegistryValueSafe {
+    param(
+        [string]$LiteralPath,
+        [string]$Name
+    )
+
+    try {
+        $item = Get-ItemProperty -LiteralPath $LiteralPath -ErrorAction Stop
+    }
+    catch {
+        return $null
+    }
+
+    if ($null -eq $item) {
+        return $null
+    }
+
+    $property = $item.PSObject.Properties[$Name]
+    if ($null -eq $property) {
+        return $null
+    }
+
+    return [string]$property.Value
+}
+
 $isWindowsOs = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
 if (-not $isWindowsOs) {
     throw 'This remediation script can only run on Windows.'
@@ -134,7 +159,7 @@ function Add-LocalPackageFromChildren {
 
     $childKeys = Get-ChildItem -LiteralPath $RootPath -ErrorAction SilentlyContinue
     foreach ($child in $childKeys) {
-        $localPackage = Get-ItemPropertyValue -LiteralPath $child.PSPath -Name 'LocalPackage' -ErrorAction SilentlyContinue
+        $localPackage = Get-RegistryValueSafe -LiteralPath $child.PSPath -Name 'LocalPackage'
         if ($localPackage) {
             Add-ReferencedPath -PathValue $localPackage -Source "$SourcePrefix\$($child.PSChildName)"
         }
@@ -161,7 +186,7 @@ function Add-UserDataProducts {
                     continue
                 }
 
-                $localPackage = Get-ItemPropertyValue -LiteralPath $installPropertiesPath -Name 'LocalPackage' -ErrorAction SilentlyContinue
+                $localPackage = Get-RegistryValueSafe -LiteralPath $installPropertiesPath -Name 'LocalPackage'
                 if ($localPackage) {
                     Add-ReferencedPath -PathValue $localPackage -Source "UserData\Products\$($sidKey.PSChildName)\$($productKey.PSChildName)"
                 }
@@ -172,7 +197,7 @@ function Add-UserDataProducts {
         if (Test-Path -LiteralPath $patchesRoot) {
             $patchKeys = Get-ChildItem -LiteralPath $patchesRoot -ErrorAction SilentlyContinue
             foreach ($patchKey in $patchKeys) {
-                $localPackage = Get-ItemPropertyValue -LiteralPath $patchKey.PSPath -Name 'LocalPackage' -ErrorAction SilentlyContinue
+                $localPackage = Get-RegistryValueSafe -LiteralPath $patchKey.PSPath -Name 'LocalPackage'
                 if ($localPackage) {
                     Add-ReferencedPath -PathValue $localPackage -Source "UserData\Patches\$($sidKey.PSChildName)\$($patchKey.PSChildName)"
                 }
